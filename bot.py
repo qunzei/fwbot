@@ -161,6 +161,62 @@ async def mark_done_here(interaction: discord.Interaction):
     else:
         await interaction.followup.send("Not a text channel.", ephemeral=True)
 
+# ----- Presence helpers & commands -----
+from typing import Literal
+
+STATUS_MAP = {
+    "online": discord.Status.online,
+    "idle": discord.Status.idle,
+    "dnd": discord.Status.do_not_disturb,
+    "invisible": discord.Status.invisible,  # bot looks offline
+}
+
+ACTIVITY_TYPE_MAP = {
+    "playing": discord.ActivityType.playing,
+    "listening": discord.ActivityType.listening,
+    "watching": discord.ActivityType.watching,
+    "competing": discord.ActivityType.competing,
+    # streaming uses a different class (discord.Streaming)
+}
+
+@bot.tree.command(name="set_presence", description="Set the bot's status/activity.")
+@app_commands.describe(
+    status="online | idle | dnd | invisible",
+    activity_type="playing | streaming | listening | watching | competing",
+    text="What the bot is 'doing' (e.g., 'video-links')",
+    url="Required only for streaming (Twitch/YouTube link)"
+)
+@app_commands.checks.has_permissions(manage_guild=True)
+async def set_presence(
+    interaction: discord.Interaction,
+    status: Literal["online", "idle", "dnd", "invisible"],
+    activity_type: Literal["playing", "streaming", "listening", "watching", "competing"],
+    text: str,
+    url: str | None = None
+):
+    await interaction.response.defer(ephemeral=True)
+
+    # Build activity
+    if activity_type == "streaming":
+        if not url:
+            await interaction.followup.send("For **streaming**, you must provide a valid Twitch/YouTube URL.", ephemeral=True)
+            return
+        activity = discord.Streaming(name=text, url=url)
+    else:
+        activity = discord.Activity(
+            name=text,
+            type=ACTIVITY_TYPE_MAP[activity_type]
+        )
+
+    await bot.change_presence(status=STATUS_MAP[status], activity=activity)
+    await interaction.followup.send(f"Presence set: **{status}** {activity_type} **{text}**", ephemeral=True)
+
+@bot.tree.command(name="clear_presence", description="Clear the bot's activity (keeps status online).")
+@app_commands.checks.has_permissions(manage_guild=True)
+async def clear_presence(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    await bot.change_presence(status=discord.Status.online, activity=None)
+    await interaction.followup.send("Cleared activity; status set to **online**.", ephemeral=True)
 
 # ---------- ready ----------
 @bot.event
