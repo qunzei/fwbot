@@ -44,7 +44,7 @@ WEEK_CHANNELS = {"1": set(WEEK1_VIDEO_LINK_CHANNELS), "2": set(WEEK2_VIDEO_LINK_
 # =====================================
 
 load_dotenv()
-TOKEN = os.getenv("MTQxMTUxNTk2MzQ5MjUzNjM4MQ.G9hFY0.DtAB3IVvqkK_8SBNkwnoRPjdKvOsoSlkTNFg10")
+TOKEN = os.getenv("DISCORD_TOKEN")
 if not TOKEN:
     raise SystemExit("Missing DISCORD_TOKEN in .env")
 
